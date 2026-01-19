@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:bubble/theme/app_theme.dart';
 import 'package:bubble/widgets/simple_button.dart';
+import 'package:bubble/screens/onboarding_screen.dart';
+import 'package:bubble/screens/sign_in_screen.dart';
 
 /// Login screen for Bubble
 /// - Hero image positioned freely
@@ -55,7 +57,7 @@ class LoginScreen extends StatelessWidget {
                           children: [
                             _buildBranding(),
                             const SizedBox(height: 28),
-                            _buildButtons(),
+                            _buildButtons(context),
                           ],
                         ),
                       ),
@@ -113,14 +115,17 @@ class LoginScreen extends StatelessWidget {
   }
 
   /// Action buttons
-  Widget _buildButtons() {
+  Widget _buildButtons(BuildContext context) {
     return Column(
       children: [
         SimpleButton(
           text: 'Login',
           gradient: AppTheme.primaryGradient,
           onPressed: () {
-            debugPrint('Login pressed');
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SignInScreen()),
+            );
           },
         ),
         const SizedBox(height: 16),
@@ -130,7 +135,10 @@ class LoginScreen extends StatelessWidget {
           borderColor: AppTheme.primaryCoral,
           textColor: AppTheme.primaryCoral,
           onPressed: () {
-            debugPrint('Sign Up pressed');
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+            );
           },
         ),
       ],

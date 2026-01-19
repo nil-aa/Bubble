@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:bubble/theme/app_theme.dart';
 import 'package:bubble/widgets/story_circle.dart';
 import 'package:bubble/widgets/profile_recommendation_widget.dart';
+import 'package:bubble/screens/messages_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -10,7 +11,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
-      appBar: _buildAppBar(),
+      appBar: _buildAppBar(context),
       body: RefreshIndicator(
         onRefresh: () async => await Future.delayed(const Duration(seconds: 1)),
         child: SingleChildScrollView(
@@ -34,7 +35,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
       backgroundColor: AppTheme.backgroundDark,
       elevation: 0,
@@ -60,7 +61,12 @@ class HomeScreen extends StatelessWidget {
         Stack(
           children: [
             IconButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MessagesScreen()),
+                );
+              },
               icon: const Icon(Icons.chat_bubble_outline, color: AppTheme.textWhite),
             ),
             Positioned(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bubble/theme/app_theme.dart';
 import 'package:bubble/widgets/simple_button.dart';
+import 'package:bubble/screens/home_screen.dart';
 
 /// Sign In screen for existing users
 class SignInScreen extends StatefulWidget {
@@ -25,12 +26,11 @@ class _SignInScreenState extends State<SignInScreen> {
 
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
-      // TODO: Implement actual login logic
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Logging in...'),
-          backgroundColor: AppTheme.primaryCoral,
-        ),
+      // Navigate to home
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (route) => false,
       );
     }
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bubble/theme/app_theme.dart';
 import 'package:bubble/widgets/simple_button.dart';
+import 'package:bubble/screens/home_screen.dart';
 
 /// Spotify connection screen
 /// Allows users to connect their Spotify account for music taste matching
@@ -11,24 +12,20 @@ class SpotifyConnectScreen extends StatelessWidget {
     // TODO: Implement Spotify OAuth flow
     debugPrint('Connect Spotify pressed');
     
-    // For now, show a success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Spotify connection coming soon!'),
-        backgroundColor: AppTheme.primaryCoral,
-      ),
+    // For now, navigate to home
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
+      (route) => false,
     );
   }
 
   void _handleSkip(BuildContext context) {
-    // TODO: Navigate to main app
-    debugPrint('Skip pressed - navigate to main app');
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Welcome to Bubble!'),
-        backgroundColor: AppTheme.primaryCoral,
-      ),
+    // Navigate to home
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
+      (route) => false,
     );
   }
 

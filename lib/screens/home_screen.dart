@@ -1,37 +1,123 @@
 import 'package:flutter/material.dart';
 import 'package:bubble/theme/app_theme.dart';
-import 'package:bubble/widgets/story_circle.dart';
-import 'package:bubble/widgets/profile_recommendation_widget.dart';
 import 'package:bubble/screens/messages_screen.dart';
+import 'package:bubble/widgets/profile_card.dart';
+import 'package:bubble/widgets/swipe_stack.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _isStackFinished = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
       appBar: _buildAppBar(context),
-      body: RefreshIndicator(
-        onRefresh: () async => await Future.delayed(const Duration(seconds: 1)),
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Daily Game Card
-              _buildDailyGameCard(),
-              
-              // 3. Recommended Feed
-              _buildFeedHeader(),
-              _buildMainFeed(),
-              
-              const SizedBox(height: 40),
-            ],
+      body: Column(
+        children: [
+          const SizedBox(height: 16),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: SwipeStack(
+                onStackFinished: () {
+                  setState(() {
+                    _isStackFinished = true;
+                  });
+                },
+                children: [
+                  const ProfileCard(
+                    name: 'Nandhana',
+                    age: '19',
+                    college: 'SSN College of Engineering',
+                    department: 'IT',
+                    bio: 'Living life one Taylor Swift bridge at a time. ✨',
+                    images: ['assets/images/user1_pic1.png', 'assets/images/user1_pic2.png'],
+                    prompts: [
+                      {'question': 'The best way to win me over is...', 'answer': 'A warm croissant and a perfectly curated sunset playlist.'},
+                      {'question': 'My most useless skill is...', 'answer': 'I can identify any Taylor Swift song by the first 0.5 seconds.'},
+                    ],
+                    lookingFor: 'Long Term',
+                    personalityType: 'ENFP',
+                    topArtists: ['Taylor Swift', 'Lana Del Rey', 'The Weeknd'],
+                  ),
+                  const ProfileCard(
+                    name: 'Mandy K',
+                    age: '20',
+                    college: 'SSN College of Engineering',
+                    department: 'IT',
+                    bio: 'If you like space, Lofi, and late night drives, we\'ll get along.',
+                    images: ['assets/images/user2_pic1.png'],
+                    prompts: [
+                      {'question': 'A controversial opinion I have is...', 'answer': 'Cold coffee is better than hot coffee, even in winter.'},
+                      {'question': 'My zombie apocalypse plan is...', 'answer': 'Hide in the library. Zombies don\'t read, right?'},
+                    ],
+                    lookingFor: 'New Friends',
+                    personalityType: 'INFJ',
+                    topArtists: ['Arctic Monkeys', 'Chase Atlantic', 'Drake'],
+                  ),
+                  const ProfileCard(
+                    name: 'Jai',
+                    age: '21',
+                    college: 'SSN College of Engineering',
+                    department: 'CSE',
+                    bio: 'Code by day, chaos by night. 💻🔥',
+                    images: ['assets/images/hero_illustration.png'], // Using hero as placeholder
+                    prompts: [
+                      {'question': 'You\'ll know I like you if...', 'answer': 'I share my VS Code shortcuts with you.'},
+                      {'question': 'Don\'t talk to me if...', 'answer': 'You think dark mode is overrated.'},
+                    ],
+                    lookingFor: 'Hackathon Partner',
+                    personalityType: 'ENTP',
+                    topArtists: ['Daft Punk', 'Kanye West', 'The Strokes'],
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
+          if (!_isStackFinished) _buildActionButtons(),
+          const SizedBox(height: 24),
+        ],
       ),
       bottomNavigationBar: _buildBottomNav(),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _buildCircleButton(Icons.close, Colors.redAccent, 56, () {}),
+          const SizedBox(width: 20),
+          _buildCircleButton(Icons.favorite, AppTheme.primaryCoral, 72, () {}),
+          const SizedBox(width: 20),
+          _buildCircleButton(Icons.star, Colors.blueAccent, 56, () {}),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCircleButton(IconData icon, Color color, double size, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: AppTheme.backgroundNavy,
+          shape: BoxShape.circle,
+          border: Border.all(color: color.withOpacity(0.5), width: 2),
+        ),
+        child: Icon(icon, color: color, size: size * 0.5),
+      ),
     );
   }
 
@@ -50,10 +136,6 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
       actions: [
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.add_box_outlined, color: AppTheme.textWhite),
-        ),
         IconButton(
           onPressed: () {},
           icon: const Icon(Icons.favorite_border, color: AppTheme.textWhite),
@@ -89,120 +171,6 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
         const SizedBox(width: 8),
-      ],
-    );
-  }
-
-  Widget _buildStoriesBar() {
-    return SizedBox(
-      height: 110,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        children: const [
-          StoryCircle(name: 'Me', isMe: true),
-          StoryCircle(name: 'Sarah', imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=60'),
-          StoryCircle(name: 'Mike', imageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&auto=format&fit=crop&q=60'),
-          StoryCircle(name: 'Chloe', imageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=500&auto=format&fit=crop&q=60'),
-          StoryCircle(name: 'Alex', imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=60'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDailyGameCard() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppTheme.primaryCoral,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Daily Vibe Check',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'See your matches for today by playing the daily game!',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: AppTheme.primaryCoral,
-                      elevation: 0,
-                      shadowColor: Colors.transparent, // Ensure no glow/shadow
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    ),
-                    child: const Text('Play Now', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Icon(Icons.videogame_asset, size: 80, color: Colors.white.withOpacity(0.3)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFeedHeader() {
-    return const Padding(
-      padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
-      child: Text(
-        'Recommended for You',
-        style: TextStyle(
-          color: AppTheme.textWhite,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMainFeed() {
-    return Column(
-      children: const [
-        ProfileRecommendationWidget(
-          username: 'Nandhana',
-          college: 'SSN College of Engineering',
-          department: 'IT',
-          bio: 'Always looking for new coffee shops and Taylor Swift playlists ✨',
-          images: [
-            'assets/images/user1_pic1.png',
-            'assets/images/user1_pic2.png',
-          ],
-          commonInterests: ['Cat Lover', 'Coffee', 'Graphic Design'],
-        ),
-        ProfileRecommendationWidget(
-          username: 'Mandy K',
-          college: 'SSN College of Engineering',
-          department: 'IT',
-          bio: 'If you like space and late night drives, let\'s chat!',
-          images: [
-            'assets/images/user2_pic1.png',
-          ],
-          commonInterests: ['Lofi Hip Hop', 'Space', 'Hackathons'],
-        ),
       ],
     );
   }

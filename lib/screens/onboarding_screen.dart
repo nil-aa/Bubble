@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bubble/theme/app_theme.dart';
 import 'package:bubble/widgets/simple_button.dart';
-import 'package:bubble/screens/spotify_connect_screen.dart';
+import 'package:bubble/screens/profile_detail_screen.dart';
 
 /// Onboarding screen for collecting user details
 /// Collects: college email, name, department, year
@@ -34,11 +34,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _handleContinue() {
     if (_formKey.currentState!.validate()) {
-      // Navigate to Spotify connection screen
+      // Navigate to Profile Setup screen
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const SpotifyConnectScreen(),
+          builder: (context) => const ProfileDetailScreen(),
         ),
       );
     }

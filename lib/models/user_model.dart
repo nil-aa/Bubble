@@ -13,6 +13,7 @@ class UserModel {
   final String? gender;
   final String? height;
   final String? locationType;
+  final String? profileImageUrl;
   final String? personalityType;
   final List<String> interests;
   final List<String> lookingFor;
@@ -39,6 +40,7 @@ class UserModel {
     this.gender,
     this.height,
     this.locationType,
+    this.profileImageUrl,
     this.personalityType,
     this.interests = const [],
     this.lookingFor = const [],
@@ -69,6 +71,7 @@ class UserModel {
       gender: data['gender'],
       height: data['height'],
       locationType: data['locationType'],
+      profileImageUrl: data['profileImageUrl'],
       personalityType: data['personalityType'],
       interests: List<String>.from(data['interests'] ?? []),
       lookingFor: List<String>.from(data['lookingFor'] ?? []),
@@ -107,6 +110,7 @@ class UserModel {
       'gender': gender,
       'height': height,
       'locationType': locationType,
+      'profileImageUrl': profileImageUrl,
       'personalityType': personalityType,
       'interests': interests,
       'lookingFor': lookingFor,

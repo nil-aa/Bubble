@@ -6,9 +6,17 @@ import 'package:flutter/foundation.dart';
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  String? _demoUid;
+
   User? get currentUser => _auth.currentUser;
-  bool get isSignedIn => _auth.currentUser != null;
-  String? get uid => _auth.currentUser?.uid;
+  bool get isSignedIn => _auth.currentUser != null || _demoUid != null;
+  String? get uid => _demoUid ?? _auth.currentUser?.uid;
+
+  /// Sign in as a demo user (fixed ID)
+  void signInAsDemo() {
+    _demoUid = 'demo_user_123';
+    notifyListeners();
+  }
 
   /// Stream of auth state changes for reactive UI
   Stream<User?> get authStateChanges => _auth.authStateChanges();
@@ -35,11 +43,19 @@ class AuthService extends ChangeNotifier {
   // ---------------------------------------------------------------------------
   // Sign In with email & password
   // ---------------------------------------------------------------------------
-  Future<UserCredential> signIn({
+  Future<UserCredential?> signIn({
     required String email,
     required String password,
   }) async {
     try {
+      // ── HARDCODED DEMO BYPASS ──────────────────────────────────────────────
+      if (email.trim().toLowerCase() == 'a@ssn.edu.in' && password == 'abc123') {
+        _demoUid = 'ac0ed1f542b9d74b1edd'; // deterministic hash of a@ssn.edu.in
+        notifyListeners();
+        return null; // Return null to indicate demo bypass success without real credential
+      }
+      // ───────────────────────────────────────────────────────────────────────
+
       final credential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,

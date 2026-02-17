@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:bubble/theme/app_theme.dart';
 import 'package:bubble/widgets/simple_button.dart';
 import 'package:bubble/screens/home_screen.dart';
 import 'package:bubble/services/auth_service.dart';
+import 'package:bubble/services/seed_service.dart';
 
 /// Sign In screen for existing users
 class SignInScreen extends StatefulWidget {
@@ -34,9 +36,24 @@ class _SignInScreenState extends State<SignInScreen> {
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+
+      // ── AUTO-SEED FOR DEMO ────────────────────────────────────────────────
+      if (email.toLowerCase() == 'a@ssn.edu.in' && password == 'abc123') {
+        try {
+          // Fire and forget seeding (idempotent)
+          SeedService.seedDemoData();
+          rootBundle.loadString('assets/diverse_200_profiles.csv').then((csv) {
+            SeedService.seedFromCsv(csv);
+          });
+        } catch (_) {} 
+      }
+      // ───────────────────────────────────────────────────────────────────────
+
       await authService.signIn(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
+        email: email,
+        password: password,
       );
 
       if (!mounted) return;

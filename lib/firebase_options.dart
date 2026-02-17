@@ -1,7 +1,3 @@
-// File generated manually — fill in values from Firebase Console.
-// Go to: https://console.firebase.google.com → Project Settings → General
-// Copy the config values for each platform from the registered apps.
-
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
@@ -27,63 +23,49 @@ class DefaultFirebaseOptions {
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // HOW TO FILL THESE IN:
-  //
-  // 1. Go to https://console.firebase.google.com
-  // 2. Select project "bubble-friends-finding-app"
-  // 3. Click the ⚙️ gear icon → "Project settings"
-  // 4. Scroll down to "Your apps" section
-  // 5. For ANDROID: click the Android icon, copy the values
-  // 6. For WEB: click the </> web icon, copy the values from firebaseConfig
-  //
-  // The "apiKey", "appId", "messagingSenderId", and "projectId" are the
-  // main values you need. You can find them in the config snippets.
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  // TODO: Replace all 'YOUR_...' values with real values from Firebase Console
-
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR_ANDROID_API_KEY',
-    appId: 'YOUR_ANDROID_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'bubble-friends-finding-app',
-    storageBucket: 'bubble-friends-finding-app.firebasestorage.app',
+    apiKey: 'AIzaSyDs8Y8SmS-0Ot-NJ0NZwJEiJIe3G1KtXCw',
+    appId: '1:593574043092:android:45db29772a505ab792ca41',
+    messagingSenderId: '593574043092',
+    projectId: 'bubble-ff561',
+    storageBucket: 'bubble-ff561.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR_IOS_API_KEY',
-    appId: 'YOUR_IOS_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'bubble-friends-finding-app',
-    storageBucket: 'bubble-friends-finding-app.firebasestorage.app',
+    apiKey: 'AIzaSyDs8Y8SmS-0Ot-NJ0NZwJEiJIe3G1KtXCw',
+    appId: '1:593574043092:android:45db29772a505ab792ca41',
+    messagingSenderId: '593574043092',
+    projectId: 'bubble-ff561',
+    storageBucket: 'bubble-ff561.firebasestorage.app',
     iosBundleId: 'com.example.bubble',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'YOUR_MACOS_API_KEY',
-    appId: 'YOUR_MACOS_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'bubble-friends-finding-app',
-    storageBucket: 'bubble-friends-finding-app.firebasestorage.app',
+    apiKey: 'AIzaSyDs8Y8SmS-0Ot-NJ0NZwJEiJIe3G1KtXCw',
+    appId: '1:593574043092:android:45db29772a505ab792ca41',
+    messagingSenderId: '593574043092',
+    projectId: 'bubble-ff561',
+    storageBucket: 'bubble-ff561.firebasestorage.app',
     iosBundleId: 'com.example.bubble',
   );
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'YOUR_WEB_API_KEY',
-    appId: 'YOUR_WEB_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'bubble-friends-finding-app',
-    authDomain: 'bubble-friends-finding-app.firebaseapp.com',
-    storageBucket: 'bubble-friends-finding-app.firebasestorage.app',
+    apiKey: 'AIzaSyDy3Acs2GHFH2fvd44vMxbgBjE0CrEleSM',
+    appId: '1:593574043092:web:7de61c8e604f1eb692ca41',
+    messagingSenderId: '593574043092',
+    projectId: 'bubble-ff561',
+    authDomain: 'bubble-ff561.firebaseapp.com',
+    storageBucket: 'bubble-ff561.firebasestorage.app',
+    measurementId: 'G-LFRJQN9KZ7',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'YOUR_WINDOWS_API_KEY',
-    appId: 'YOUR_WINDOWS_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'bubble-friends-finding-app',
-    authDomain: 'bubble-friends-finding-app.firebaseapp.com',
-    storageBucket: 'bubble-friends-finding-app.firebasestorage.app',
+    apiKey: 'AIzaSyDy3Acs2GHFH2fvd44vMxbgBjE0CrEleSM',
+    appId: '1:593574043092:web:7de61c8e604f1eb692ca41',
+    messagingSenderId: '593574043092',
+    projectId: 'bubble-ff561',
+    authDomain: 'bubble-ff561.firebaseapp.com',
+    storageBucket: 'bubble-ff561.firebasestorage.app',
+    measurementId: 'G-LFRJQN9KZ7',
   );
 }

@@ -1,15 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:bubble/theme/app_theme.dart';
 import 'package:bubble/screens/messages_screen.dart';
-import 'package:bubble/screens/login_screen.dart';
 import 'package:bubble/widgets/profile_card.dart';
 import 'package:bubble/widgets/swipe_stack.dart';
-import 'package:bubble/services/auth_service.dart';
-import 'package:bubble/services/firestore_service.dart';
-import 'package:bubble/services/compatibility_engine.dart';
-import 'package:bubble/models/user_model.dart';
-import 'package:bubble/models/match_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,254 +13,122 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _isStackFinished = false;
-  bool _isLoading = true;
-  List<_ScoredUser> _scoredUsers = [];
-  UserModel? _currentUser;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadDiscoveryQueue();
-  }
-
-  /// Load campus users, compute compatibility, and build discovery queue
-  Future<void> _loadDiscoveryQueue() async {
-    try {
-      final authService = Provider.of<AuthService>(context, listen: false);
-      final firestoreService =
-          Provider.of<FirestoreService>(context, listen: false);
-      final uid = authService.uid;
-      if (uid == null) return;
-
-      // 1. Get current user's profile
-      final currentUser = await firestoreService.getUser(uid);
-      if (currentUser == null) return;
-
-      // 2. Get all campus users
-      final campusUsers = await firestoreService.getCampusUsers(
-        campusId: currentUser.campusId,
-        excludeUid: uid,
-      );
-
-      // 3. Get already-swiped user IDs
-      final swipedIds = await firestoreService.getSwipedUserIds(uid);
-
-      // 4. Compute compatibility scores for unswiped users
-      final scored = <_ScoredUser>[];
-      for (final user in campusUsers) {
-        if (swipedIds.contains(user.uid)) continue; // Skip already swiped
-
-        double musicScore = 0;
-        List<String> sharedArtists = [];
-        List<String> sharedGenres = [];
-
-        if (currentUser.musicVector != null && user.musicVector != null) {
-          musicScore = CompatibilityEngine.computeMusicSimilarity(
-            currentUser.musicVector!,
-            user.musicVector!,
-          );
-          sharedArtists = CompatibilityEngine.findSharedArtists(
-            currentUser.musicVector!,
-            user.musicVector!,
-          );
-          sharedGenres = CompatibilityEngine.findSharedGenres(
-            currentUser.musicVector!,
-            user.musicVector!,
-          );
-        }
-
-        scored.add(_ScoredUser(
-          user: user,
-          musicSimilarity: musicScore,
-          sharedArtists: sharedArtists,
-          sharedGenres: sharedGenres,
-        ));
-      }
-
-      // 5. Sort by compatibility (highest first)
-      scored.sort((a, b) => b.musicSimilarity.compareTo(a.musicSimilarity));
-
-      if (mounted) {
-        setState(() {
-          _currentUser = currentUser;
-          _scoredUsers = scored;
-          _isLoading = false;
-          _isStackFinished = scored.isEmpty;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading discovery queue: $e');
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  /// Handle swipe right — create match in Firestore
-  void _onSwipeRight(int index) async {
-    if (index >= _scoredUsers.length) return;
-    final targetUser = _scoredUsers[index];
-
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final firestoreService =
-        Provider.of<FirestoreService>(context, listen: false);
-    final uid = authService.uid;
-    if (uid == null) return;
-
-    try {
-      // Check if target already swiped right on us
-      final existingMatch =
-          await firestoreService.findMatchBetweenUsers(targetUser.user.uid, uid);
-
-      if (existingMatch != null && existingMatch.status.startsWith('pending')) {
-        // It's a match! Update to matched
-        await firestoreService.updateMatchStatus(existingMatch.matchId, 'matched');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('🎉 You matched with ${targetUser.user.name}!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } else if (existingMatch == null) {
-        // Create new pending match
-        final matchId =
-            '${uid}_${targetUser.user.uid}_${DateTime.now().millisecondsSinceEpoch}';
-        final match = MatchModel(
-          matchId: matchId,
-          userId1: uid,
-          userId2: targetUser.user.uid,
-          musicSimilarity: targetUser.musicSimilarity,
-          totalCompatibility: targetUser.musicSimilarity,
-          sharedArtists: targetUser.sharedArtists,
-          sharedGenres: targetUser.sharedGenres,
-          status: 'pending_1',
-          createdAt: DateTime.now(),
-        );
-        await firestoreService.createMatch(match);
-      }
-    } catch (e) {
-      debugPrint('Error creating match: $e');
-    }
-  }
-
-  /// Handle swipe left — just skip for now
-  void _onSwipeLeft(int index) {
-    // Could store rejections in Firestore to prevent reshowing
-    debugPrint('Swiped left on ${_scoredUsers[index].user.name}');
-  }
+  // Classic placeholder for a clean, professional look
+  static const String _placeholderImg = 'https://ui-avatars.com/api/?name=User&background=2A314E&color=fff&size=512';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
       appBar: _buildAppBar(context),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppTheme.primaryCoral))
-          : Column(
-              children: [
-                const SizedBox(height: 16),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: _scoredUsers.isEmpty
-                        ? _buildEmptyState()
-                        : SwipeStack(
-                            onSwipeRight: _onSwipeRight,
-                            onSwipeLeft: _onSwipeLeft,
-                            onStackFinished: () {
-                              setState(() => _isStackFinished = true);
-                            },
-                            children: _scoredUsers.map((scored) {
-                              final user = scored.user;
-                              return ProfileCard(
-                                name: user.name,
-                                age: _calculateAge(user),
-                                college: user.college,
-                                department: user.department,
-                                bio: user.bio ?? '',
-                                images: user.topArtistNames.isEmpty
-                                    ? ['assets/images/hero_illustration.png']
-                                    : ['assets/images/hero_illustration.png'],
-                                prompts: user.prompts,
-                                lookingFor: user.lookingFor.isNotEmpty
-                                    ? user.lookingFor.first
-                                    : 'Friends',
-                                personalityType:
-                                    user.personalityType ?? 'XXXX',
-                                topArtists: user.topArtistNames.isNotEmpty
-                                    ? user.topArtistNames.take(3).toList()
-                                    : ['No artists yet'],
-                                compatibilityPercent:
-                                    scored.musicSimilarity,
-                                sharedArtists: scored.sharedArtists,
-                                sharedGenres: scored.sharedGenres,
-                                vibeSummary: user.vibeSummary,
-                              );
-                            }).toList(),
-                          ),
+      body: _isStackFinished 
+        ? Center(child: _buildEmptyState())
+        : Column(
+            children: [
+              const SizedBox(height: 16),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: SwipeStack(
+                    onStackFinished: () {
+                      setState(() {
+                        _isStackFinished = true;
+                      });
+                    },
+                    children: [
+                      const ProfileCard(
+                        name: 'Nandhana',
+                        age: '19',
+                        college: 'SSN College of Engineering',
+                        department: 'IT',
+                        bio: 'Living life one Taylor Swift bridge at a time. ✨',
+                        images: ['assets/images/user1_pic1.png', 'assets/images/user1_pic2.png'],
+                        prompts: [
+                          {'question': 'The best way to win me over is...', 'answer': 'A warm croissant and a perfectly curated sunset playlist.'},
+                          {'question': 'My most useless skill is...', 'answer': 'I can identify any Taylor Swift song by the first 0.5 seconds.'},
+                        ],
+                        lookingFor: 'Long Term',
+                        personalityType: 'ENFP',
+                        topArtists: ['Taylor Swift', 'Lana Del Rey', 'The Weeknd'],
+                        compatibilityPercent: 92,
+                        sharedArtists: ['Taylor Swift'],
+                        sharedGenres: ['Pop', 'Indie Pop'],
+                      ),
+                      const ProfileCard(
+                        name: 'Mandy K',
+                        age: '20',
+                        college: 'SSN College of Engineering',
+                        department: 'IT',
+                        bio: 'If you like space, Lofi, and late night drives, we\'ll get along.',
+                        images: ['assets/images/user2_pic1.png'],
+                        prompts: [
+                          {'question': 'A controversial opinion I have is...', 'answer': 'Cold coffee is better than hot coffee, even in winter.'},
+                          {'question': 'My zombie apocalypse plan is...', 'answer': 'Hide in the library. Zombies don\'t read, right?'},
+                        ],
+                        lookingFor: 'New Friends',
+                        personalityType: 'INFJ',
+                        topArtists: ['Arctic Monkeys', 'Chase Atlantic', 'Drake'],
+                        compatibilityPercent: 84,
+                        sharedArtists: ['Arctic Monkeys'],
+                        sharedGenres: ['Alt Rock', 'Lofi'],
+                      ),
+                      const ProfileCard(
+                        name: 'Jai',
+                        age: '21',
+                        college: 'SSN College of Engineering',
+                        department: 'CSE',
+                        bio: 'Code by day, chaos by night. 💻🔥',
+                        images: [_placeholderImg], // Using classic placeholder for Jai
+                        prompts: [
+                          {'question': 'You\'ll know I like you if...', 'answer': 'I share my VS Code shortcuts with you.'},
+                          {'question': 'Don\'t talk to me if...', 'answer': 'You think dark mode is overrated.'},
+                        ],
+                        lookingFor: 'Hackathon Partner',
+                        personalityType: 'ENTP',
+                        topArtists: ['Daft Punk', 'Kanye West', 'The Strokes'],
+                        compatibilityPercent: 76,
+                        sharedArtists: ['The Strokes'],
+                        sharedGenres: ['Electronic', 'Hip Hop'],
+                      ),
+                    ],
                   ),
                 ),
-                if (!_isStackFinished && _scoredUsers.isNotEmpty)
-                  _buildActionButtons(),
-                const SizedBox(height: 24),
-              ],
-            ),
+              ),
+              _buildActionButtons(),
+              const SizedBox(height: 24),
+            ],
+          ),
       bottomNavigationBar: _buildBottomNav(),
     );
   }
 
   Widget _buildEmptyState() {
-    return Center(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40.0),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.explore_outlined,
+          Icon(Icons.person_pin_circle_outlined, 
               size: 80, color: AppTheme.textGray.withOpacity(0.5)),
           const SizedBox(height: 24),
           const Text(
-            'No more profiles nearby',
+            'No more profiles for today',
             style: TextStyle(
               color: AppTheme.textWhite,
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Check back later for new people on your campus!',
-            style: TextStyle(
-              color: AppTheme.textGray.withOpacity(0.7),
-              fontSize: 14,
-            ),
+          const SizedBox(height: 12),
+          const Text(
+            'Check back soon for more wavelengths!',
+            style: TextStyle(color: AppTheme.textGray, fontSize: 15),
             textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          TextButton(
-            onPressed: () {
-              setState(() => _isLoading = true);
-              _loadDiscoveryQueue();
-            },
-            child: const Text(
-              'Refresh',
-              style: TextStyle(
-                color: AppTheme.primaryCoral,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
           ),
         ],
       ),
     );
-  }
-
-  String _calculateAge(UserModel user) {
-    // For now, return year as age placeholder
-    // Will be computed from birthday once stored
-    return user.year.replaceAll(RegExp(r'[^0-9]'), '');
   }
 
   Widget _buildActionButtons() {
@@ -351,22 +212,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        // Sign out button
-        IconButton(
-          onPressed: () async {
-            final authService =
-                Provider.of<AuthService>(context, listen: false);
-            await authService.signOut();
-            if (context.mounted) {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-                (route) => false,
-              );
-            }
-          },
-          icon: const Icon(Icons.logout, color: AppTheme.textGray, size: 20),
-        ),
         const SizedBox(width: 8),
       ],
     );
@@ -395,19 +240,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-}
-
-/// Internal helper holding a user with their computed compatibility score
-class _ScoredUser {
-  final UserModel user;
-  final double musicSimilarity;
-  final List<String> sharedArtists;
-  final List<String> sharedGenres;
-
-  const _ScoredUser({
-    required this.user,
-    required this.musicSimilarity,
-    required this.sharedArtists,
-    required this.sharedGenres,
-  });
 }

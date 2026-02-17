@@ -42,18 +42,26 @@ class ProfileCard extends StatefulWidget {
 }
 
 class _ProfileCardState extends State<ProfileCard> {
-  int _currentImageIndex = 0;
+  int _currentPageIndex = 0;
 
-  void _nextImage() {
-    setState(() {
-      _currentImageIndex = (_currentImageIndex + 1) % widget.images.length;
-    });
+  // We want to be able to tap through both images and prompts.
+  // The total number of "pages" is the max of images or 1 (bio) + prompts.
+  int get _totalPages => 1 + widget.prompts.length;
+
+  void _nextPage() {
+    if (_currentPageIndex < _totalPages - 1) {
+      setState(() {
+        _currentPageIndex++;
+      });
+    }
   }
 
-  void _prevImage() {
-    setState(() {
-      _currentImageIndex = (_currentImageIndex - 1 + widget.images.length) % widget.images.length;
-    });
+  void _prevPage() {
+    if (_currentPageIndex > 0) {
+      setState(() {
+        _currentPageIndex--;
+      });
+    }
   }
 
   @override
@@ -76,7 +84,7 @@ class _ProfileCardState extends State<ProfileCard> {
           builder: (context, constraints) {
             return Stack(
               children: [
-                // 1. Base Image (or placeholder)
+                // 1. Base Image (mapped to current page or first image)
                 _buildProfileImage(),
 
                 // 2. Gradient Overlay
@@ -106,7 +114,7 @@ class _ProfileCardState extends State<ProfileCard> {
                     child: _buildCompatibilityBadge(),
                   ),
 
-                // 4. Image Indicators (Top)
+                // 4. Page Indicators (Top)
                 Positioned(
                   top: 10,
                   left: 10,
@@ -114,18 +122,18 @@ class _ProfileCardState extends State<ProfileCard> {
                   child: IgnorePointer(
                     child: Row(
                       children: List.generate(
-                        widget.images.length,
+                        _totalPages,
                         (index) => Expanded(
                           child: Container(
                             height: 4,
                             margin: const EdgeInsets.symmetric(horizontal: 4),
                             decoration: BoxDecoration(
-                              color: index == _currentImageIndex 
+                              color: index == _currentPageIndex 
                                 ? Colors.white 
                                 : Colors.white.withOpacity(0.3),
                               borderRadius: BorderRadius.circular(2),
                               boxShadow: [
-                                if (index == _currentImageIndex)
+                                if (index == _currentPageIndex)
                                   BoxShadow(
                                     color: Colors.black.withOpacity(0.3),
                                     blurRadius: 4,
@@ -145,14 +153,14 @@ class _ProfileCardState extends State<ProfileCard> {
                   bottom: 0,
                   left: 0,
                   right: 0,
-                  height: constraints.maxHeight * 0.4,
+                  height: constraints.maxHeight * 0.45,
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
                     padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
                       child: Column(
-                        key: ValueKey(_currentImageIndex),
+                        key: ValueKey(_currentPageIndex),
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: _buildDetailContent(),
                       ),
@@ -160,26 +168,24 @@ class _ProfileCardState extends State<ProfileCard> {
                   ),
                 ),
 
-                // 6. Interaction Layers (Top area for photo switching)
+                // 6. Interaction Layers (Top area for paging)
                 Positioned(
                   top: 0,
                   left: 0,
                   right: 0,
-                  height: constraints.maxHeight * 0.6,
+                  height: constraints.maxHeight * 0.55,
                   child: Row(
                     children: [
                       // Left Tap Area
                       Expanded(
                         child: GestureDetector(
                           behavior: HitTestBehavior.translucent,
-                          onTap: () {
-                            if (_currentImageIndex > 0) _prevImage();
-                          },
+                          onTap: _prevPage,
                           child: Container(
                             color: Colors.transparent,
                             child: Align(
                               alignment: Alignment.centerLeft,
-                              child: _currentImageIndex > 0 
+                              child: _currentPageIndex > 0 
                                 ? Padding(
                                     padding: const EdgeInsets.only(left: 8.0, top: 40),
                                     child: Container(
@@ -200,14 +206,12 @@ class _ProfileCardState extends State<ProfileCard> {
                       Expanded(
                         child: GestureDetector(
                           behavior: HitTestBehavior.translucent,
-                          onTap: () {
-                            if (_currentImageIndex < widget.images.length - 1) _nextImage();
-                          },
+                          onTap: _nextPage,
                           child: Container(
                             color: Colors.transparent,
                             child: Align(
                               alignment: Alignment.centerRight,
-                              child: _currentImageIndex < widget.images.length - 1
+                              child: _currentPageIndex < _totalPages - 1
                                 ? Padding(
                                     padding: const EdgeInsets.only(right: 8.0, top: 40),
                                     child: Container(
@@ -246,7 +250,9 @@ class _ProfileCardState extends State<ProfileCard> {
       );
     }
 
-    final imagePath = widget.images[_currentImageIndex];
+    // Try to get image for current page, fallback to first image if not enough images
+    final imageIndex = _currentPageIndex < widget.images.length ? _currentPageIndex : 0;
+    final imagePath = widget.images[imageIndex];
     final isAsset = imagePath.startsWith('assets/');
 
     if (isAsset) {
@@ -318,7 +324,7 @@ class _ProfileCardState extends State<ProfileCard> {
   }
 
   List<Widget> _buildDetailContent() {
-    if (_currentImageIndex == 0 || widget.images.length <= 1) {
+    if (_currentPageIndex == 0) {
       return [
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -442,39 +448,37 @@ class _ProfileCardState extends State<ProfileCard> {
         ],
       ];
     } else {
-      // For Pic 2+ show Prompts
+      // For Page 1+ show Prompts
+      final promptIndex = _currentPageIndex - 1;
+      if (promptIndex < 0 || promptIndex >= widget.prompts.length) return [];
+      
+      final prompt = widget.prompts[promptIndex];
       return [
-        const SizedBox(height: 40),
-        ...widget.prompts.map((prompt) {
-          final bool isLast = widget.prompts.last == prompt;
-          return Padding(
-            padding: EdgeInsets.only(bottom: isLast ? 40.0 : 80.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  prompt['question'] ?? '',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  prompt['answer'] ?? '',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    height: 1.3,
-                  ),
-                ),
-              ],
+        const SizedBox(height: 20),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              prompt['question'] ?? '',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.8,
+              ),
             ),
-          );
-        }),
+            const SizedBox(height: 12),
+            Text(
+              prompt['answer'] ?? '',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                height: 1.3,
+              ),
+            ),
+          ],
+        ),
       ];
     }
   }

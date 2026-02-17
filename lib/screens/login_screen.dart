@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:provider/provider.dart';
 import 'package:bubble/theme/app_theme.dart';
 import 'package:bubble/widgets/simple_button.dart';
 import 'package:bubble/screens/onboarding_screen.dart';
 import 'package:bubble/screens/sign_in_screen.dart';
+import 'package:bubble/services/auth_service.dart';
+import 'package:bubble/services/seed_service.dart';
 
 /// Login screen for Bubble
 /// - Hero image positioned freely
@@ -55,7 +59,7 @@ class LoginScreen extends StatelessWidget {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            _buildBranding(),
+                            _buildBranding(context),
                             const SizedBox(height: 28),
                             _buildButtons(context),
                           ],
@@ -88,7 +92,7 @@ class LoginScreen extends StatelessWidget {
   }
 
   /// Branding section
-  Widget _buildBranding() {
+  Widget _buildBranding(BuildContext context) {
     return Column(
       children: [
         const Text(

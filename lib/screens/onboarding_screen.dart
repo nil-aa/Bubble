@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:bubble/theme/app_theme.dart';
 import 'package:bubble/widgets/simple_button.dart';
 import 'package:bubble/screens/profile_detail_screen.dart';
+import 'package:bubble/services/auth_service.dart';
+import 'package:bubble/services/firestore_service.dart';
+import 'package:bubble/models/user_model.dart';
 
 /// Onboarding screen for collecting user details
 /// Collects: college email, name, department, year
@@ -32,15 +36,61 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _handleContinue() {
-    if (_formKey.currentState!.validate()) {
-      // Navigate to Profile Setup screen
+  bool _isLoading = false;
+
+  void _handleContinue() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_selectedYear == null) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final firestoreService =
+          Provider.of<FirestoreService>(context, listen: false);
+
+      // 1. Create Firebase Auth account
+      final credential = await authService.signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      // 2. Derive campus ID from email domain
+      final emailDomain =
+          _emailController.text.trim().split('@').last.toLowerCase();
+
+      // 3. Save initial user profile to Firestore
+      final user = UserModel(
+        uid: credential.user!.uid,
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        department: _departmentController.text.trim(),
+        college: emailDomain, // will be refined in profile setup
+        year: _selectedYear!,
+        campusId: emailDomain, // campus = email domain
+        createdAt: DateTime.now(),
+      );
+      await firestoreService.saveUser(user);
+
+      if (!mounted) return;
+
+      // 4. Navigate to Profile Detail setup
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => const ProfileDetailScreen(),
         ),
       );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -173,11 +223,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     const SizedBox(height: 48),
                     
                     // Continue Button
-                    SimpleButton(
-                      text: 'Continue',
-                      gradient: AppTheme.primaryGradient,
-                      onPressed: _handleContinue,
-                    ),
+                    _isLoading
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                                color: AppTheme.primaryCoral))
+                        : SimpleButton(
+                            text: 'Continue',
+                            gradient: AppTheme.primaryGradient,
+                            onPressed: _handleContinue,
+                          ),
                     
                     const SizedBox(height: 24),
                   ],

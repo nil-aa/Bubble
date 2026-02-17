@@ -8,10 +8,16 @@ class ProfileCard extends StatefulWidget {
   final String department;
   final String bio;
   final List<String> images;
-  final List<Map<String, String>> prompts; // e.g. {'question': 'My secret talent...', 'answer': 'Cooking'}
+  final List<Map<String, String>> prompts;
   final String lookingFor;
-  final String personalityType; // e.g. 'ENFP'
+  final String personalityType;
   final List<String> topArtists;
+
+  // ── NEW: Compatibility fields ─────────────────────────────────────────────
+  final double? compatibilityPercent;
+  final List<String> sharedArtists;
+  final List<String> sharedGenres;
+  final String? vibeSummary;
 
   const ProfileCard({
     super.key,
@@ -25,6 +31,10 @@ class ProfileCard extends StatefulWidget {
     required this.lookingFor,
     required this.personalityType,
     required this.topArtists,
+    this.compatibilityPercent,
+    this.sharedArtists = const [],
+    this.sharedGenres = const [],
+    this.vibeSummary,
   });
 
   @override
@@ -66,19 +76,10 @@ class _ProfileCardState extends State<ProfileCard> {
           builder: (context, constraints) {
             return Stack(
               children: [
-                // 1. Base Image
-                Image.asset(
-                  widget.images[_currentImageIndex],
-                  height: double.infinity,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: AppTheme.backgroundNavy,
-                    child: const Center(child: Icon(Icons.person, size: 100, color: AppTheme.textGray)),
-                  ),
-                ),
+                // 1. Base Image (or placeholder)
+                _buildProfileImage(),
 
-                // 2. Gradient Overlay (On top of image, below interactions)
+                // 2. Gradient Overlay
                 IgnorePointer(
                   child: Container(
                     decoration: BoxDecoration(
@@ -97,7 +98,15 @@ class _ProfileCardState extends State<ProfileCard> {
                   ),
                 ),
 
-                // 3. Indicators (Top)
+                // 3. Compatibility Badge (top-right)
+                if (widget.compatibilityPercent != null)
+                  Positioned(
+                    top: 24,
+                    right: 16,
+                    child: _buildCompatibilityBadge(),
+                  ),
+
+                // 4. Image Indicators (Top)
                 Positioned(
                   top: 10,
                   left: 10,
@@ -131,12 +140,12 @@ class _ProfileCardState extends State<ProfileCard> {
                   ),
                 ),
 
-                // 4. Detailed Profile Info (Scrollable Bottom Area)
+                // 5. Detailed Profile Info (Scrollable Bottom Area)
                 Positioned(
                   bottom: 0,
                   left: 0,
                   right: 0,
-                  height: constraints.maxHeight * 0.4, // Use card height fraction
+                  height: constraints.maxHeight * 0.4,
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
                     padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
@@ -151,12 +160,12 @@ class _ProfileCardState extends State<ProfileCard> {
                   ),
                 ),
 
-                // 5. Interaction Layers (Top Scroll-Free Area)
+                // 6. Interaction Layers (Top area for photo switching)
                 Positioned(
                   top: 0,
                   left: 0,
                   right: 0,
-                  height: constraints.maxHeight * 0.6, // Upper 60% for photo switching
+                  height: constraints.maxHeight * 0.6,
                   child: Row(
                     children: [
                       // Left Tap Area
@@ -226,9 +235,90 @@ class _ProfileCardState extends State<ProfileCard> {
     );
   }
 
+  /// Build the profile image — handles both asset paths and network URLs
+  Widget _buildProfileImage() {
+    if (widget.images.isEmpty) {
+      return Container(
+        color: AppTheme.backgroundNavy,
+        child: const Center(
+          child: Icon(Icons.person, size: 100, color: AppTheme.textGray),
+        ),
+      );
+    }
+
+    final imagePath = widget.images[_currentImageIndex];
+    final isAsset = imagePath.startsWith('assets/');
+
+    if (isAsset) {
+      return Image.asset(
+        imagePath,
+        height: double.infinity,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(
+          color: AppTheme.backgroundNavy,
+          child: const Center(child: Icon(Icons.person, size: 100, color: AppTheme.textGray)),
+        ),
+      );
+    } else {
+      return Image.network(
+        imagePath,
+        height: double.infinity,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(
+          color: AppTheme.backgroundNavy,
+          child: const Center(child: Icon(Icons.person, size: 100, color: AppTheme.textGray)),
+        ),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            color: AppTheme.backgroundNavy,
+            child: const Center(
+              child: CircularProgressIndicator(color: AppTheme.primaryCoral),
+            ),
+          );
+        },
+      );
+    }
+  }
+
+  /// Compatibility percentage badge
+  Widget _buildCompatibilityBadge() {
+    final percent = widget.compatibilityPercent!;
+    final color = percent >= 70
+        ? Colors.greenAccent
+        : percent >= 40
+            ? Colors.orangeAccent
+            : AppTheme.primaryCoral;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.5)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.favorite, color: color, size: 16),
+          const SizedBox(width: 6),
+          Text(
+            '${percent.toStringAsFixed(0)}%',
+            style: TextStyle(
+              color: color,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   List<Widget> _buildDetailContent() {
-    // If it's the first photo, show name, age, bio, chips, music
-    if (_currentImageIndex == 0 || widget.images.length == 1) {
+    if (_currentImageIndex == 0 || widget.images.length <= 1) {
       return [
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -256,6 +346,27 @@ class _ProfileCardState extends State<ProfileCard> {
             fontSize: 14,
           ),
         ),
+
+        // Vibe Summary (if available)
+        if (widget.vibeSummary != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppTheme.accentPurple.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              widget.vibeSummary!,
+              style: TextStyle(
+                color: AppTheme.accentLightBlue.withOpacity(0.9),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+
         const SizedBox(height: 16),
         Wrap(
           spacing: 8,
@@ -271,6 +382,27 @@ class _ProfileCardState extends State<ProfileCard> {
           style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
         ),
         const SizedBox(height: 14),
+
+        // Shared Artists (if available)
+        if (widget.sharedArtists.isNotEmpty) ...[
+          Row(
+            children: [
+              const Icon(Icons.people, color: Colors.green, size: 16),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Shared: ${widget.sharedArtists.take(3).join(", ")}',
+                  style: const TextStyle(color: Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+        ],
+
+        // Top Artists
         Row(
           children: [
             const Icon(Icons.music_note, color: Colors.green, size: 18),
@@ -285,16 +417,38 @@ class _ProfileCardState extends State<ProfileCard> {
             ),
           ],
         ),
+
+        // Shared Genres
+        if (widget.sharedGenres.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: widget.sharedGenres.take(4).map((genre) {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.green.withOpacity(0.3)),
+                ),
+                child: Text(
+                  genre,
+                  style: const TextStyle(color: Colors.greenAccent, fontSize: 10, fontWeight: FontWeight.w500),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ];
     } else {
       // For Pic 2+ show Prompts
-      // We'll show all prompts with healthy spacing for easy scrolling
       return [
-        const SizedBox(height: 40), // Push the first prompt down a bit as requested
+        const SizedBox(height: 40),
         ...widget.prompts.map((prompt) {
           final bool isLast = widget.prompts.last == prompt;
           return Padding(
-            padding: EdgeInsets.only(bottom: isLast ? 40.0 : 80.0), // Large spacing between prompts
+            padding: EdgeInsets.only(bottom: isLast ? 40.0 : 80.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -320,11 +474,10 @@ class _ProfileCardState extends State<ProfileCard> {
               ],
             ),
           );
-        }).toList(),
+        }),
       ];
     }
   }
-
 
   Widget _buildChip(String label, IconData icon, Color color) {
     return Container(

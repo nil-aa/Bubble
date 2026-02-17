@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:bubble/theme/app_theme.dart';
 import 'package:bubble/widgets/simple_button.dart';
 import 'package:bubble/screens/spotify_connect_screen.dart';
+import 'package:bubble/services/auth_service.dart';
+import 'package:bubble/services/firestore_service.dart';
 
 class ProfileDetailScreen extends StatefulWidget {
   const ProfileDetailScreen({super.key});
@@ -159,11 +162,64 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     );
   }
 
-  void _handleContinue() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SpotifyConnectScreen()),
-    );
+  bool _isLoading = false;
+
+  void _handleContinue() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final firestoreService =
+          Provider.of<FirestoreService>(context, listen: false);
+      final uid = authService.uid;
+      if (uid == null) throw 'Not signed in';
+
+      // Build prompts data
+      final promptsData = <Map<String, String>>[];
+      for (int i = 0; i < _selectedPrompts.length; i++) {
+        promptsData.add({
+          'question': _selectedPrompts[i],
+          'answer': _promptControllers[i].text.trim(),
+        });
+      }
+
+      // Save profile fields to Firestore (merge with existing user doc)
+      await firestoreService.updateUserFields(uid, {
+        'bio': _bioController.text.trim(),
+        'gender': _selectedGender,
+        'height': _heightController.text.trim(),
+        'locationType': _locationType,
+        'interests': _selectedInterests,
+        'lookingFor': _selectedLookingFor,
+        'prompts': promptsData,
+        'selectedPromptQuestions': _selectedPrompts,
+        'lifestyleTags': _selectedLifestyleTags,
+        'preferences': {
+          'yearPrefs': _selectedYearPrefs.join(','),
+          'deptPrefs': _selectedDeptPrefs.join(','),
+          'genderPref': _selectedGenderPref ?? '',
+        },
+        if (_selectedBirthday != null)
+          'birthday': _selectedBirthday!.toIso8601String(),
+      });
+
+      if (!mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const SpotifyConnectScreen()),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error saving profile: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -250,11 +306,15 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
                   const SizedBox(height: 48),
 
-                  SimpleButton(
-                    text: 'Continue',
-                    gradient: AppTheme.primaryGradient,
-                    onPressed: _handleContinue,
-                  ),
+                  _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                              color: AppTheme.primaryCoral))
+                      : SimpleButton(
+                          text: 'Continue',
+                          gradient: AppTheme.primaryGradient,
+                          onPressed: _handleContinue,
+                        ),
                   const SizedBox(height: 40),
                 ],
               ),
